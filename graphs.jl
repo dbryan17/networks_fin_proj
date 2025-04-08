@@ -96,33 +96,27 @@ e - how strong of assortive mixing. 0 is ER graph, 2*d is all within communities
 =#
 
 # could potentially edit this to be given a list of sizes and a density list 
+# this is working, but need to check it because at large c values and small n values and large r and r0 values the groups are too small for it to work
+# the groups need to be big enough, then the average degree works, but at small values, it doesn't really work 
 function sbm_pp_cp(n :: Int, d :: Int, c :: Int, r :: Float64, r0 :: Float64) :: Graphs.SimpleGraph{Int64} 
 
   d :: Float64 = d * 2
 
   # calc sizes of each group
-  sizes = foldl(
-    (acc, _) -> push!(acc, floor(Int, acc[end] * r)),
+  sizes_f :: Vector{Float64} = foldl(
+    (acc, _) -> push!(acc, (acc[end] * r)),
     2:c, 
-    init = [floor(Int, n * (r - 1.) / (r^c - 1.))]
+    init = [n * (r - 1.) / (r^c - 1.)]
   )
 
-  println(reduce(+, sizes))
+  sizes :: Vector{Int} = [floor(size) for size in sizes_f]
+
   leftover = n - reduce(+, sizes)
-
-  println(sizes)
-
-  println(leftover)
-
 
   for i in 0:round(leftover)
     idx = c - (i % c)
     sizes[idx] += 1
   end
-
-  println(leftover)
-
-  println(sizes)
 
   z :: Vector{Int} = []
 
@@ -214,5 +208,5 @@ end
 g = sbm_pp_asoritive(10000, 8, 4, 0.)
 println((2 * ne(g)) / nv(g) )
 
-g1 = sbm_pp_cp(10000, 32, 10, 2.1, 2.3)
+g1 = sbm_pp_cp(10000, 32, 20, 2.1, 2.3)
 println((2 * ne(g1)) / nv(g1) )
