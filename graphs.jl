@@ -57,18 +57,104 @@ function sbm_core(z :: Vector{Int}, m :: Matrix{Float64}) :: Graphs.SimpleGraph{
 end
 
 
+
+#= 
+this is for assortive mixing with core perhicary inside each assortive community. 
+n - number of nodes 
+d - mean degree
+c_assort - number of communities for the outer assortative mixing 
+c_cp - number of communities inside the assortative communities for the core perherairy
+e - how strong of assortive mixing. 0 is ER graph, d(1 - 1/c) is all connections within community. c_assort that is
+r - scale factor. How much bigger the further out community is from the next closest to the core
+r0 - scale factor for degree. How much smaller the average degree of one out is. For ex, c1 = 5 c2 = 10. c1 avg degree is double that of c2 if r0 = 2
+=# 
+function sbm_two_scale(n :: Int, d :: Float64, c_assort :: Int, c_cp :: Int, e :: Float64, r :: Float64, r0 :: Float64) :: Graphs.SimpleGraph{Int64} 
+
+  # I am going for inside community core perhiary, then every node inside that communitiy has same likelyhood of connecting to a node outside the community 
+  # this is easier, and I think it makes the most sense
+
+
+  # get z and mm for regular assortative
+  z_top, mm_top = sbm_assoritive_helper(n, d, c_assort, e)
+
+  z_top_sorted = sort(z_top)
+
+  # collect amount of nodes for each 
+  counts :: Vector{Int} = foldl(
+    ((counts, prev), curr) -> prev == curr ? (counts[end] +=1; (counts, curr)) : (push!(counts, 1), curr), 
+    z_top_sorted, 
+    init = (Int[], -1)
+  )[1]
+
+  counts_poss = unique(counts)
+
+  # calculate n, d for inside c-p
+  intra_p = mm_top[1, 1]
+
+  # maps counts to average degree
+  d_inners :: Dict{Int, Float64} = Dict(count => count * intra_p for count in counts_poss)
+
+  # maps 
+  z_mm_insides :: Dict{Int, Tuple{Vector{Int}, Matrix{Float64}}} = Dict(n => sbm_pp_cp_helper(n, d, c_cp, r, r0) for (n, d) in d_inners)
+
+  num_to_count = Dict{Int, Int}()
+
+  big_z :: Vector{Tuple{Int, Int}} = [] 
+
+  for (i, count) in enumerate(counts)
+    z, mm = z_mm_insides[count]
+    num_to_count[i] = count
+    big_z_part = [(i, j) for j in z]
+    big_z = vcat(big_z, big_z_part)
+  end
+
+  g = SimpleGraph(n)
+
+  for (i, (i_top, i_inner)) in enumerate(big_z)
+    for j in i+1:length(big_z)
+      j_top, j_inner = big_z[j]
+      # if the outer communities are the same, defer to the inner communities 
+      if i_top == j_top
+        mm_inside = z_mm_insides[num_to_count[i_top]][2]
+        p = mm_inside[i_inner, j_inner]
+      # if the outer communites are not the same, the probablity of connection is the outer mm
+      else
+        p = mm_top[i_top, j_top]
+      end
+      if rand() < p
+        add_edge!(g, i, j)
+      end
+    end
+  end
+
+  return g
+
+end
+
 #=
 planted paritions sbm model as described in the notes for assortiative mixing
 n - number of nodes 
 d - mean degree
 c - number of communities
-e - how strong of assortive mixing. 0 is ER graph, 2*d is all within communities
+e - how strong of assortive mixing. 0 is ER graph, d(1 - 1/c) is all connections within community
+
+this returns parition and mixing matrix instead of graph
 =#
-function sbm_pp_asoritive(n :: Int, d :: Int, c :: Int, e :: Float64) :: Graphs.SimpleGraph{Int64} 
-  # p - along the diagonoal probablity
-  p = (d + e/c)/n 
-  # q - off diagonol probablity
-  q = (d - e/c)/n
+function sbm_assoritive_helper(n :: Int, d :: Float64, c :: Int, e :: Float64) :: Tuple{Vector{Int}, Matrix{Float64}}
+
+  # solve for d_in 
+  d_in = d/c + e 
+  d_out = d - (d/c) - e
+
+  # solve for p and q
+  p = d_in / (n/c)
+  q = d_out/ (n - (n/c))
+
+  # # p - along the diagonoal probablity
+  # p = (d/c + e/2)/n
+  # # q - off diagonol probablity
+  # q = (d/c - e/2)/n
+
   mm = [i == j ? p : q for i in 1:c, j in 1:c]
   n_per_c :: Int = floor(n / c)
   leftover :: Int = n % c
@@ -79,7 +165,17 @@ function sbm_pp_asoritive(n :: Int, d :: Int, c :: Int, e :: Float64) :: Graphs.
   for i in 1:leftover
     push!(z,i)
   end
+  return z,mm
+end
 
+
+#=
+planted paritions sbm model as described in the notes for assortiative mixing
+
+returns graph
+=#
+function sbm_pp_asoritive(n :: Int, d :: Float64, c :: Int, e :: Float64) :: Graphs.SimpleGraph{Int64} 
+  z, mm = sbm_assoritive_helper(n, d, c, e)
   return sbm_core(z, mm)
 end
 
@@ -98,7 +194,7 @@ e - how strong of assortive mixing. 0 is ER graph, 2*d is all within communities
 # could potentially edit this to be given a list of sizes and a density list 
 # this is working, but need to check it because at large c values and small n values and large r and r0 values the groups are too small for it to work
 # the groups need to be big enough, then the average degree works, but at small values, it doesn't really work 
-function sbm_pp_cp(n :: Int, d :: Int, c :: Int, r :: Float64, r0 :: Float64) :: Graphs.SimpleGraph{Int64} 
+function sbm_pp_cp_helper(n :: Int, d :: Float64, c :: Int, r :: Float64, r0 :: Float64) :: Tuple{Vector{Int}, Matrix{Float64}}
 
   d :: Float64 = d * 2
 
@@ -113,17 +209,18 @@ function sbm_pp_cp(n :: Int, d :: Int, c :: Int, r :: Float64, r0 :: Float64) ::
 
   leftover = n - reduce(+, sizes)
 
-  for i in 0:round(leftover)
-    idx = c - (i % c)
-    sizes[idx] += 1
+  for i in 0:leftover
+    if i != leftover 
+      idx = c - (i % c)
+      sizes[idx] += 1
+    end
   end
 
   z :: Vector{Int} = []
 
   # make groups
-  start = 1 
   for (id, size) in enumerate(sizes)
-    for i in start:start+size 
+    for i in 1:size 
       push!(z, id)
     end
   end
@@ -199,14 +296,23 @@ function sbm_pp_cp(n :: Int, d :: Int, c :: Int, r :: Float64, r0 :: Float64) ::
       mm[a, i] = p
     end
   end
-
-
-
-  return sbm_core(z, mm)
+  return z, mm
 end
 
-g = sbm_pp_asoritive(10000, 8, 4, 0.)
+# returns graph
+function sbm_pp_cp(n :: Int, d :: Float64, c :: Int, r :: Float64, r0 :: Float64) :: Graphs.SimpleGraph{Int64} 
+  z, mm = sbm_pp_cp_helper(n, d, c, r, r0)
+  sbm_core(z, mm)
+end 
+
+
+# e : 0 -> d(1 - 1/c) 
+g = sbm_pp_asoritive(10000, 8., 10, 7.2)
 println((2 * ne(g)) / nv(g) )
 
-g1 = sbm_pp_cp(10000, 32, 20, 2.1, 2.3)
+g1 = sbm_pp_cp(10000, 32., 5, 2.1, 2.3)
 println((2 * ne(g1)) / nv(g1) )
+
+# e : 0 -> d(1 - 1/c) 
+g2 = sbm_two_scale(10000, 100., 5, 2, 40., 2., 1.3)
+println((2 * ne(g2)) / nv(g2) )
