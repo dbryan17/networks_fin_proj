@@ -13,12 +13,14 @@ Notes:
   + Watts-Strogatz x 
   + Barbasbasi Albert x 
   ----------------------
-  + Twitter Networks 
-  + Karate Club 
+  + Twitter Networks NO 
+  + Karate Club TODO
 - I want to add
-  + DC-SBM 
-  + SBM 
-- My proposal said dc-sbm with friend groups with core-perhiery
+  + FB TODO 
+  + DC-SBM NO 
+  + SBM x 
+  + Two scale SBM (friend groups with core perhihary) x 
+- My proposal said dc-sbm with friend groups with core-perhiery 
 =#
 
 
@@ -308,22 +310,3 @@ function sbm_pp_cp(n :: Int, d :: Float64, c :: Int, r :: Float64, r0 :: Float64
 end 
 
 
-# TESTING
-
-# # e : 0 -> d(1 - 1/c) 
-# g = sbm_pp_asoritive(10000, 8., 10, 7.2)
-# println((2 * ne(g)) / nv(g) )
-
-# g1 = sbm_pp_cp(10000, 100., 2, 4.0, 2.0)
-# println((2 * ne(g1)) / nv(g1) )
-
-# # e : 0 -> d(1 - 1/c) 
-# g2 = sbm_two_scale(10000, 100., 10, 2, 90., 4., 2.)
-# println((2 * ne(g2)) / nv(g2) )
-
-# # layout = spring_layout(g2)
-
-# # plot(layout, nodecolor=:lightblue, linewidth=2, marker=:circle, nodelegend=false)
-# # savefig("graph_plot.png")
-
-# degree_dist_plot(g2, "testtt", "testttt")
