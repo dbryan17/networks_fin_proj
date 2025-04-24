@@ -1,3 +1,5 @@
+using Random
+
 #= 
 DeGroot model 
 takes a node's opinion, neigbors opions, and self weight, returns new opinion
@@ -74,15 +76,34 @@ end
 
 function degroot_dist(g :: Graphs.SimpleGraph{Int}, n :: Int, s :: Float64, dist) :: Vector{Vector{Float64}}
   ops_0 = Vector{Float64}(undef, nv(g))
-  selfs = Vector{Float64}(undef, nv(g))
-  rands = rand(dist, 1000)
+  selfs :: Vector{Float64} = fill(s, nv(g))
+  rands = rand(dist, nv(g))
   rands = clamp.(rands, 0., 1.)
   for i in vertices(g)
     ops_0[i] = rands[i]
-    selfs[i] = s
 
   end
   return degroot_sim(n, g, ops_0, selfs)
 end
 
 
+function degroot_n_dist(g, n :: Int, s :: Float64, dists, dists_sizes) :: Vector{Vector{Float64}} 
+  if length(dists) != length(dists_sizes)
+    error("In degroot n dist, length of sizes does not match length of distrubtions")
+  end
+  rand_vs = shuffle(vertices(g))
+  selfs :: Vector{Float64} = fill(s, nv(g))
+  ops_0 = Vector{Float64}(undef, nv(g))
+  zipped = zip(dists, dists_sizes)
+  offset = 1
+  for (dist, size) in zipped
+    rands = rand(dist, size)
+    rands = clamp.(rands, 0., 1.)
+    for i in offset:offset + size - 1
+      ops_0[rand_vs[i]] = rands[i - offset + 1]
+    end
+    offset += size
+  end
+
+  return degroot_sim(n, g, ops_0, selfs)
+end

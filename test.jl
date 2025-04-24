@@ -4,6 +4,7 @@ using Distributions
 include("graphs.jl")
 include("plots.jl")
 include("models.jl")
+include("dist.jl")
 
 # err_graph = er_graph(2000, 0.008)
 # degree_dist_plot(err_graph, "test1", "er graph")
@@ -17,6 +18,9 @@ include("models.jl")
 
 # e : 0 -> d(1 - 1/c) 
 g = sbm_pp_asoritive(1000, 20., 10, 7.2)
+g = sbm_pp_cp(10000, 100., 2, 4.0, 2.0)
+println((2 * ne(g)) / nv(g) )
+
 println((2 * ne(g)) / nv(g) )
 degree_dist_plot(g, "test3", "smb assortive dd")
 
@@ -24,11 +28,16 @@ degree_dist_plot(g, "test3", "smb assortive dd")
 all_ops = degroot_dist(g, 5, 0., Normal(.5, .1))
 
 
+
+
+
+
+dists, sizes = n_modal_normal([(.3, .1), (.8, .05)], [.5, .5], nv(g))
+all_ops = degroot_n_dist(g, 5, 0., dists, sizes)
+
 op_dist_plot_01(all_ops[1], "test3", "first op")
 
 op_dist_plot_01(all_ops[length(all_ops)], "test2", "last op")
-
-
 
 
 # g1 = sbm_pp_cp(10000, 100., 2, 4.0, 2.0)
