@@ -3,6 +3,7 @@ include("plots.jl")
 using Graphs
 using GraphPlot
 using Plots
+using Distributions
 #=
 This file will be for random graph generation and getting the empricial graphs. 
   

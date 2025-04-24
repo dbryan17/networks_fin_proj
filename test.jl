@@ -1,3 +1,6 @@
+using Distributions
+
+
 include("graphs.jl")
 include("plots.jl")
 include("models.jl")
@@ -17,11 +20,13 @@ g = sbm_pp_asoritive(1000, 20., 10, 7.2)
 println((2 * ne(g)) / nv(g) )
 degree_dist_plot(g, "test3", "smb assortive dd")
 
-all_ops = degroot_full_rand(g, 10, 0.)
+# all_ops = degroot_full_rand(g, 5, 0.)
+all_ops = degroot_dist(g, 5, 0., Normal(.5, .1))
 
-op_dist_plot(all_ops[1], "test3", "first op")
 
-op_dist_plot(all_ops[length(all_ops)], "test2", "last op")
+op_dist_plot_01(all_ops[1], "test3", "first op")
+
+op_dist_plot_01(all_ops[length(all_ops)], "test2", "last op")
 
 
 

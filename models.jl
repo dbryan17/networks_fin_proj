@@ -50,7 +50,7 @@ function degroot_sim(n :: Int, g :: Graphs.SimpleGraph{Int}, ops :: Vector{Float
 
   all_ops :: Vector{Vector{Float64}} = [ops]
 
-  for _ in n
+  for _ in 1:n
     ops = degroot_step(ops, selfs, g)
     push!(all_ops, ops)
   end
@@ -66,6 +66,19 @@ function degroot_full_rand(g :: Graphs.SimpleGraph{Int}, n :: Int, s :: Float64)
   selfs = Vector{Float64}(undef, nv(g))
   for i in vertices(g)
     ops_0[i] = rand()
+    selfs[i] = s
+
+  end
+  return degroot_sim(n, g, ops_0, selfs)
+end
+
+function degroot_dist(g :: Graphs.SimpleGraph{Int}, n :: Int, s :: Float64, dist) :: Vector{Vector{Float64}}
+  ops_0 = Vector{Float64}(undef, nv(g))
+  selfs = Vector{Float64}(undef, nv(g))
+  rands = rand(dist, 1000)
+  rands = clamp.(rands, 0., 1.)
+  for i in vertices(g)
+    ops_0[i] = rands[i]
     selfs[i] = s
 
   end
