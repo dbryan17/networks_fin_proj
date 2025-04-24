@@ -13,11 +13,15 @@ include("models.jl")
 # TESTING
 
 # e : 0 -> d(1 - 1/c) 
-g = sbm_pp_asoritive(10000, 20., 10, 7.2)
+g = sbm_pp_asoritive(1000, 20., 10, 7.2)
 println((2 * ne(g)) / nv(g) )
 degree_dist_plot(g, "test3", "smb assortive dd")
 
-ops = degroot_full_rand(g, 10, 0.)
+all_ops = degroot_full_rand(g, 10, 0.)
+
+op_dist_plot(all_ops[1], "test3", "first op")
+
+op_dist_plot(all_ops[length(all_ops)], "test2", "last op")
 
 
 
