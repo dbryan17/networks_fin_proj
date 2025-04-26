@@ -9,6 +9,26 @@ function degroot_node_comp(n_x :: Float64, adjs_x :: Vector{Float64}, w_nn :: Fl
 end
 
 
+#=
+BEBA model as discribed in the paper
+now goes between -1 and 1
+=#
+
+function beba_node_comp(y_i :: Float64, adjs_i :: Vector{Float64}, w_ii :: Float64, b :: Float64) :: Float64
+  weights :: Vector{Float64} = [b * y_i * y_j + 1 for y_j in adjs_i]
+
+  # equation 5 in paper, to normalize the thing
+  if w_ii + reduce(+, weights) <= 0
+    # do the normalization thing to avoid weirdness
+    return sign(y_i)
+  else 
+    # normal version
+    weights_and_ops = [wij * yj for (wij, yj) in zip(weights, adjs_i)]
+    return clamp(( (w_ii * y_i) + (reduce(+, weights_and_ops)) ) / ( w_ii + reduce(+, weights) ), -1., 1.)
+  end
+
+end
+
 #= 
 run one time step of degroot model. 
 The opinions (ops) is the attributes from 0 to 1 for each node. Represented as a vector from nodes (indices) to node attributes
@@ -29,6 +49,22 @@ function degroot_step(ops :: Vector{Float64}, selfs :: Vector{Float64}, g :: Gra
     self_val = selfs[n]
     wii :: Float64 = self_val == 0. ? 1. : self_val * length(adjs)
     new_n_val = degroot_node_comp(n_val, adj_vals, wii)
+    ops_t1[n] = new_n_val
+  end
+  return ops_t1
+end
+
+
+function beba_step(ops :: Vector{Float64}, selfs :: Vector{Float64}, bs :: Vector{Float64}, g :: Graphs.SimpleGraph{Int64}) :: Vector{Float64}
+  ops_t1 = Vector{Float64}(undef, length(ops))
+  for n in vertices(g)
+    adjs :: Vector{Int} = neighbors(g, n)
+    adj_vals :: Vector{Float64} = [ops[i] for i in adjs]
+    n_val :: Float64 = ops[n]
+    self_val :: Float64 = selfs[n]
+    b :: Float64 = bs[n]
+    wii :: Float64 = self_val == 0. ? 1. : self_val * length(adjs)
+    new_n_val :: Float64 = beba_node_comp(n_val, adj_vals, wii, b)
     ops_t1[n] = new_n_val
   end
   return ops_t1
@@ -60,18 +96,41 @@ function degroot_sim(n :: Int, g :: Graphs.SimpleGraph{Int}, ops :: Vector{Float
   return all_ops
 end
 
+function beba_sim(n :: Int, g :: Graphs.SimpleGraph{Int}, ops :: Vector{Float64}, selfs :: Vector{Float64}, bs :: Vector{Float64})  :: Vector{Vector{Float64}}
+  if !(nv(g) == length(ops) == length(selfs) == length(bs)) 
+    error("In Degroot Sim - lengths do not match") 
+  end
+
+  all_ops :: Vector{Vector{Float64}} = [ops]
+
+  for _ in 1:n 
+    ops = beba_step(ops, selfs, bs, g)
+    push!(all_ops, ops)
+  end
+  return all_ops
+end
+
 
 # takes a graph, and runs degrot with full random variables from 0 to 1, with self wieght = s for all. and a number of iterations
 # returns array of how the opinions progressed
 function degroot_full_rand(g :: Graphs.SimpleGraph{Int}, n :: Int, s :: Float64) :: Vector{Vector{Float64}}
   ops_0 = Vector{Float64}(undef, nv(g))
-  selfs = Vector{Float64}(undef, nv(g))
+  selfs :: Vector{Float64} = fill(s, nv(g))
   for i in vertices(g)
     ops_0[i] = rand()
-    selfs[i] = s
-
   end
   return degroot_sim(n, g, ops_0, selfs)
+end
+
+# fixed B value for all nodes that are given
+function beba_full_rand(g :: Graphs.SimpleGraph{Int}, n :: Int, s :: Float64, b :: Float64) :: Vector{Vector{Float64}}
+  ops_0 = Vector{Float64}(undef, nv(g))
+  selfs :: Vector{Float64} = fill(s, nv(g))
+  bs :: Vector{Float64} = fill(b, nv(g))
+  for i in vertices(g)
+    ops_0[i] = 2 * rand() - 1
+  end
+  return beba_sim(n, g, ops_0, selfs, bs)
 end
 
 function degroot_dist(g :: Graphs.SimpleGraph{Int}, n :: Int, s :: Float64, dist) :: Vector{Vector{Float64}}
@@ -87,23 +146,63 @@ function degroot_dist(g :: Graphs.SimpleGraph{Int}, n :: Int, s :: Float64, dist
 end
 
 
-function degroot_n_dist(g, n :: Int, s :: Float64, dists, dists_sizes) :: Vector{Vector{Float64}} 
-  if length(dists) != length(dists_sizes)
-    error("In degroot n dist, length of sizes does not match length of distrubtions")
-  end
+function dists_to_ops(g, dists, dists_sizes, minVal :: Float64)
   rand_vs = shuffle(vertices(g))
-  selfs :: Vector{Float64} = fill(s, nv(g))
-  ops_0 = Vector{Float64}(undef, nv(g))
   zipped = zip(dists, dists_sizes)
+  ops_0 = Vector{Float64}(undef, nv(g))
   offset = 1
   for (dist, size) in zipped
     rands = rand(dist, size)
-    rands = clamp.(rands, 0., 1.)
+    rands = clamp.(rands, minVal, 1.)
     for i in offset:offset + size - 1
       ops_0[rand_vs[i]] = rands[i - offset + 1]
     end
     offset += size
   end
+  return ops_0
 
+end
+
+
+function degroot_n_dist(g, n :: Int, s :: Float64, dists, dists_sizes) :: Vector{Vector{Float64}} 
+  if length(dists) != length(dists_sizes)
+    error("In degroot n dist, length of sizes does not match length of distrubtions")
+  end
+  if reduce(+, dists_sizes) != nv(g)
+    error("In degroot n dists, total sizes of distrubtions does not match size of graph")
+  end
+  selfs :: Vector{Float64} = fill(s, nv(g))
+  ops_0 = dists_to_ops(g, dists, dists_sizes, 0.)
   return degroot_sim(n, g, ops_0, selfs)
+end
+
+
+# this is still a fixed b value
+function beba_n_dist(g, n :: Int, s :: Float64, b :: Float64, dists, dists_sizes) :: Vector{Vector{Float64}}
+  if length(dists) != length(dists_sizes)
+    error("In beba n dist, length of sizes does not match length of distrubtions")
+  end
+  if reduce(+, dists_sizes) != nv(g)
+    error("In beba n dists, total sizes of distrubtions does not match size of graph")
+  end
+  selfs :: Vector{Float64} = fill(s, nv(g))
+  bs :: Vector{Float64} = fill(b, nv(g))
+  ops_0 = dists_to_ops(g, dists, dists_sizes, -1.)
+  return beba_sim(n, g, ops_0, selfs, bs)
+end
+
+# this one, we include distrubtions for b
+function beba_n_dist_dist(g, n :: Int, s :: Float64, op_dists, op_dists_sizes, b_dists, b_dists_sizes) :: Vector{Vector{Float64}}
+  if !(length(op_dists) != length(op_dists_sizes) | length(b_dists) != length(b_dists_sizes))
+    error("In beba n dist, length of sizes does not match length of distrubtions")
+  end
+  if !(reduce(+, op_dists_sizes) == nv(g) == reduce(+, b_dists_sizes))
+    error("In beba n dists, total sizes of distrubtions does not match size of graph")
+  end
+
+  selfs :: Vector{Float64} = fill(s, nv(g))
+  bs = dists_to_ops(g, b_dists, b_dists_sizes, -1.)
+  ops_0 = dists_to_ops(g, op_dists, op_dists_sizes, -1.)
+  return beba_sim(n, g, ops_0, selfs, bs)
+
 end

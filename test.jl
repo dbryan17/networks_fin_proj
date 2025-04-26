@@ -28,16 +28,22 @@ degree_dist_plot(g, "test3", "smb assortive dd")
 all_ops = degroot_dist(g, 5, 0., Normal(.5, .1))
 
 
+all_ops = beba_full_rand(g, 15, 0., 3.1)
 
 
 
+# dists, sizes = n_modal_normal([(.3, .1), (.8, .05)], [.5, .5], nv(g))
+# all_ops = degroot_n_dist(g, 15, 2., dists, sizes)
 
-dists, sizes = n_modal_normal([(.3, .1), (.8, .05)], [.5, .5], nv(g))
-all_ops = degroot_n_dist(g, 5, 0., dists, sizes)
+op_dist_plot_11(all_ops[1], "test3", "first op")
 
-op_dist_plot_01(all_ops[1], "test3", "first op")
+for op in all_ops[2]
+  if op > 1. || op < -1. 
+    print("HERE")
+  end
+end
 
-op_dist_plot_01(all_ops[length(all_ops)], "test2", "last op")
+op_dist_plot_11(all_ops[length(all_ops)], "test2", "last op")
 
 
 # g1 = sbm_pp_cp(10000, 100., 2, 4.0, 2.0)
