@@ -56,7 +56,8 @@ function mine_weight_comp(b_i :: Float64, g_i_tup :: Tuple{Float64, Float64}, y_
   prod :: Float64 = y_i * y_j
   diff_abs :: Float64 = abs(y_i - y_j)
   # backfire effect activated
-  if y_i != 0. && 0. > prod && r < p_i
+  if g_i != 0. && 0. > prod && r < p_i
+    print("doing backfire")
     return (diff_abs / 2) * (g_i * -1)
   # confirmation bias comp on the same side
   elseif 0. < prod  
@@ -200,6 +201,11 @@ function mine_sim(n :: Int, g :: Graphs.SimpleGraph{Int}, ops :: Vector{Float64}
   end
   if maximum(ops) > 1. || maximum([p for (g, p) in g_ps]) > 1. || minimum(bs) < -.1 || minimum([g for (g,p) in g_ps]) < -1.
     error("bad vals in mine sim")
+  end
+  for (g, p) in g_ps
+    if g != 0. 
+      print("HERe")
+    end
   end
   all_ops :: Vector{Vector{Float64}} = [ops]
   for _ in 1:n 
