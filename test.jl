@@ -38,6 +38,21 @@ all_ops = beba_dists(g, 10, ops_dist, ops_dist_len, [4.], [nv(g)], 0., [8.], [nv
 # dists, sizes = n_modal_normal([(.3, .1), (.8, .05)], [.5, .5], nv(g))
 # all_ops = degroot_n_dist(g, 15, 2., dists, sizes)
 
+g = g
+n = 10
+ops_dist, ops_dists_lens = make_dists([MyUniform(-1, 1.)], [1.] , nv(g))
+bs_dist, bs_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
+max_B :: Float64 = 1.
+gs_dist, gs_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
+max_G :: Float64 = 1. 
+ps_dist, ps_dists_lens = make_dists([MyNumber(1.)], [1.], nv(g))
+g_ps_dist = zip(gs_dist, ps_dist)
+if ps_dists_lens != gs_dists_lens 
+  error("G and P not matching")
+end
+ss_dist, ss_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
+all_ops = mine_dists(g, n, ops_dist, ops_dists_lens, bs_dist, bs_dists_lens, max_B, g_ps_dist, ps_dists_lens, max_G, ps_dist, ps_dists_lens)
+
 op_dist_plot_11(all_ops[1], "test3", "first op")
 
 op_dist_plot_11(all_ops[length(all_ops)], "test2", "last op")

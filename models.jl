@@ -195,7 +195,7 @@ function beba_sim(n :: Int, g :: Graphs.SimpleGraph{Int}, ops :: Vector{Float64}
 end
 
 function mine_sim(n :: Int, g :: Graphs.SimpleGraph{Int}, ops :: Vector{Float64}, selfs :: Vector{Float64}, bs :: Vector{Float64}, g_ps :: Vector{Tuple{Float64, Float64}}) :: Vector{Vector{Float64}}
-  if !(nv(g) == length(ops) == length(selfs) == lengths(bs) == length(g_ps))
+  if !(nv(g) == length(ops) == length(selfs) == length(bs) == length(g_ps))
     error("in mine sim - lengths do not match")
   end
   if maximum(ops) > 1. || maximum([p for (g, p) in g_ps]) > 1. || minimum(bs) < -.1 || minimum([g for (g,p) in g_ps]) < -1.
