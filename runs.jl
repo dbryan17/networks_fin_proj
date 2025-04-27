@@ -113,7 +113,7 @@ function beba_selfs_bs_fixed(g, n :: Int, s :: Float64, b :: Float64, op_dists, 
 # everything along distrubtions. 
 # this is going to be the only one because now I am making it so you can just give the distributions a number to fill it all as the same number
 # this is the super general one where there is no depedency except for the gamma, p
-function mine_dists(g :: Graphs.SimpleGraph{Int}, n :: Int, dists_ops, dists_lens_ops, dists_bs, dists_lens_bs, maxB :: Float64, dists_g_ps, dists_lens_g_ps, maxG :: Float64, dists_s, dists_lens_s) :: Vector{Vector{Float64}}
+function mine_dists(g :: Graphs.SimpleGraph{Int}, n :: Int, dists_ops, dists_lens_ops, dists_bs, dists_lens_bs, maxB :: Float64, dists_g_ps, dists_lens_g_ps, maxG :: Float64, dists_s, dists_lens_s, true_backfire) :: Vector{Vector{Float64}}
   check_lens(dists_ops, dists_lens_ops)
   check_lens(dists_bs, dists_lens_bs)
   check_lens(dists_g_ps, dists_lens_g_ps)
@@ -125,7 +125,7 @@ function mine_dists(g :: Graphs.SimpleGraph{Int}, n :: Int, dists_ops, dists_len
   g_ps = tup_dists_to_vals(g, dists_g_ps, dists_lens_g_ps, 0., maxG, 0., 1.)
   selfs = dists_to_vals(g, dists_s, dists_lens_s, 0., Inf)
 
-  return mine_sim(n, g, ops_0, selfs, bs, g_ps)
+  return mine_sim(n, g, ops_0, selfs, bs, g_ps, true_backfire)
 
 end
 
