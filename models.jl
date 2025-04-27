@@ -1,4 +1,10 @@
 using Random
+using Graphs
+
+
+
+######### node comps ##########
+
 
 #= 
 DeGroot model 
@@ -70,6 +76,11 @@ function mine_comp(y_i :: Float64, adjs_i :: Vector{Float64}, w_ii :: Float64, b
 end
 
 
+###################################################
+
+
+############# step functions ######################
+
 
 
 #= 
@@ -135,6 +146,16 @@ end
 
 
 
+#####################################################
+
+
+
+
+############## simulate functions ###################
+# runs many steps
+
+
+
 #=
 n - number of steps
 g - graph
@@ -186,138 +207,4 @@ function mine_sim(n :: Int, g :: Graphs.SimpleGraph{Int}, ops :: Vector{Float64}
     push!(all_ops, ops)
   end
   return all_ops
-end
-
-
-function dists_to_vals(g, dists, dists_sizes, minVal :: Float64, maxVal :: Float64) :: Vector{Float64}
-  rand_vs = shuffle(vertices(g))
-  zipped = zip(dists, dists_sizes)
-  vals = Vector{Float64}(undef, nv(g))
-  offset = 1
-  for (dist, size) in zipped 
-    rands = rand(dist, size)
-    rands = clamp.(rands, minVal, maxVal)
-    for i in offset:offset + size - 1
-      vals[rand_vs[i]] = rands[i - offset + 1]
-    end
-    offset += size
-  end
-  return vals
-end
-
-function tup_dists_to_vals(g, dists_tup, dists_sizes, minVal1 :: Float64, maxVal1 :: Float64, minVal2 :: Float64, maxVal2 :: Float64) :: Vector{Tuple{Float64, Float64}}
-  rand_vs = shuffle(vertices(g))
-  zipped = zip(dists_tup, dists_sizes)
-  vals = Vector{Tuple{Float64, Float64}}(undef, nv(g))
-  offset = 1 
-  for ((dist1, dist2), size) in zipped
-    rands1 = rand(dist1, size)
-    rands1 = clamp.(rands1, minVal1, maxVal1)
-    rands2 = rand(dist2, size)
-    rands2 = clamp.(rands2, minVal2, maxVal2)
-    for i in offset:offset + size - 1
-      vals[rand_vs[i]] = (rands1[i - offset + 1], rands2[i - offset + 1])
-    end
-    offset += size
-  end
-  return vals
-end
-
-
-# takes a graph, and runs degrot with full random variables from 0 to 1, with self wieght = s for all. and a number of iterations
-# returns array of how the opinions progressed
-function degroot_full_rand(g :: Graphs.SimpleGraph{Int}, n :: Int, s :: Float64) :: Vector{Vector{Float64}}
-  ops_0 = Vector{Float64}(undef, nv(g))
-  selfs :: Vector{Float64} = fill(s, nv(g))
-  for i in vertices(g)
-    ops_0[i] = rand()
-  end
-  return degroot_sim(n, g, ops_0, selfs)
-end
-
-# fixed B value for all nodes that are given
-function beba_full_rand(g :: Graphs.SimpleGraph{Int}, n :: Int, s :: Float64, b :: Float64) :: Vector{Vector{Float64}}
-  ops_0 = Vector{Float64}(undef, nv(g))
-  selfs :: Vector{Float64} = fill(s, nv(g))
-  bs :: Vector{Float64} = fill(b, nv(g))
-  for i in vertices(g)
-    ops_0[i] = 2 * rand() - 1
-  end
-  return beba_sim(n, g, ops_0, selfs, bs)
-end
-
-function degroot_dist(g :: Graphs.SimpleGraph{Int}, n :: Int, s :: Float64, dist) :: Vector{Vector{Float64}}
-  ops_0 = Vector{Float64}(undef, nv(g))
-  selfs :: Vector{Float64} = fill(s, nv(g))
-  rands = rand(dist, nv(g))
-  rands = clamp.(rands, 0., 1.)
-  for i in vertices(g)
-    ops_0[i] = rands[i]
-
-  end
-  return degroot_sim(n, g, ops_0, selfs)
-end
-
-
-
-
-function dists_to_ops(g, dists, dists_sizes, minVal :: Float64)
-  rand_vs = shuffle(vertices(g))
-  zipped = zip(dists, dists_sizes)
-  ops_0 = Vector{Float64}(undef, nv(g))
-  offset = 1
-  for (dist, size) in zipped
-    rands = rand(dist, size)
-    rands = clamp.(rands, minVal, 1.)
-    for i in offset:offset + size - 1
-      ops_0[rand_vs[i]] = rands[i - offset + 1]
-    end
-    offset += size
-  end
-  return ops_0
-
-end
-
-
-function degroot_n_dist(g, n :: Int, s :: Float64, dists, dists_sizes) :: Vector{Vector{Float64}} 
-  if length(dists) != length(dists_sizes)
-    error("In degroot n dist, length of sizes does not match length of distrubtions")
-  end
-  if reduce(+, dists_sizes) != nv(g)
-    error("In degroot n dists, total sizes of distrubtions does not match size of graph")
-  end
-  selfs :: Vector{Float64} = fill(s, nv(g))
-  ops_0 = dists_to_ops(g, dists, dists_sizes, 0.)
-  return degroot_sim(n, g, ops_0, selfs)
-end
-
-
-# this is still a fixed b value
-function beba_n_dist(g, n :: Int, s :: Float64, b :: Float64, dists, dists_sizes) :: Vector{Vector{Float64}}
-  if length(dists) != length(dists_sizes)
-    error("In beba n dist, length of sizes does not match length of distrubtions")
-  end
-  if reduce(+, dists_sizes) != nv(g)
-    error("In beba n dists, total sizes of distrubtions does not match size of graph")
-  end
-  selfs :: Vector{Float64} = fill(s, nv(g))
-  bs :: Vector{Float64} = fill(b, nv(g))
-  ops_0 = dists_to_ops(g, dists, dists_sizes, -1.)
-  return beba_sim(n, g, ops_0, selfs, bs)
-end
-
-# this one, we include distrubtions for b
-function beba_n_dist_dist(g, n :: Int, s :: Float64, op_dists, op_dists_sizes, b_dists, b_dists_sizes) :: Vector{Vector{Float64}}
-  if !(length(op_dists) != length(op_dists_sizes) | length(b_dists) != length(b_dists_sizes))
-    error("In beba n dist, length of sizes does not match length of distrubtions")
-  end
-  if !(reduce(+, op_dists_sizes) == nv(g) == reduce(+, b_dists_sizes))
-    error("In beba n dists, total sizes of distrubtions does not match size of graph")
-  end
-
-  selfs :: Vector{Float64} = fill(s, nv(g))
-  bs = dists_to_ops(g, b_dists, b_dists_sizes, -1.)
-  ops_0 = dists_to_ops(g, op_dists, op_dists_sizes, -1.)
-  return beba_sim(n, g, ops_0, selfs, bs)
-
 end

@@ -5,6 +5,7 @@ include("graphs.jl")
 include("plots.jl")
 include("models.jl")
 include("dist.jl")
+include("runs.jl")
 
 # err_graph = er_graph(2000, 0.008)
 # degree_dist_plot(err_graph, "test1", "er graph")
@@ -24,24 +25,20 @@ println((2 * ne(g)) / nv(g) )
 println((2 * ne(g)) / nv(g) )
 degree_dist_plot(g, "test3", "smb assortive dd")
 
-# all_ops = degroot_full_rand(g, 5, 0.)
-all_ops = degroot_dist(g, 5, 0., Normal(.5, .1))
+# # all_ops = degroot_full_rand(g, 5, 0.)
+# all_ops = degroot_dist(g, 5, 0., Normal(.5, .1))
 
 
-all_ops = beba_full_rand(g, 15, 0., 3.1)
+# all_ops = beba_full_rand(g, 15, 0., 3.1)
 
-
+all_ops = beba_dists(g, 10, [Uniform(-1., 1.)], [nv(g)], [4.], [nv(g)], 0., [8.], [nv(g)])
+ops_dist, ops_dist_len = make_dists([MyUniform(-1. , 1.)], [1.], nv(g))
+all_ops = beba_dists(g, 10, ops_dist, ops_dist_len, [4.], [nv(g)], 0., [8.], [nv(g)])
 
 # dists, sizes = n_modal_normal([(.3, .1), (.8, .05)], [.5, .5], nv(g))
 # all_ops = degroot_n_dist(g, 15, 2., dists, sizes)
 
 op_dist_plot_11(all_ops[1], "test3", "first op")
-
-for op in all_ops[2]
-  if op > 1. || op < -1. 
-    print("HERE")
-  end
-end
 
 op_dist_plot_11(all_ops[length(all_ops)], "test2", "last op")
 
