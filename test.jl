@@ -21,13 +21,10 @@ include("make_runs.jl")
 # e : 0 -> d(1 - 1/c) 
 g = sbm_pp_asoritive(1000, 20., 10, 7.2)
 g = sbm_pp_cp(10000, 100., 2, 4.0, 2.0)
-z, g = sbm_two_scale(1000, 30., 8, 2, 15., 6., 4.)
+z, g = sbm_two_scale(1000, 40., 8, 2, 15., 6., 4.)
 
 println((2 * ne(g)) / nv(g) )
-
-println((2 * ne(g)) / nv(g) )
-degree_dist_plot(g, "test3", "smb assortive two scale dd")
-error("check")
+degree_dist_plot(g, "test1", "smb assortive two scale dd")
 # # all_ops = degroot_full_rand(g, 5, 0.)
 # all_ops = degroot_dist(g, 5, 0., Normal(.5, .1))
 
@@ -56,7 +53,9 @@ all_ops = beba_dists(g, 10, ops_dist, ops_dist_len, [4.], [nv(g)], 0., [8.], [nv
 # ss_dist, ss_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
 # all_ops = mine_dists(g, n, ops_dist, ops_dists_lens, bs_dist, bs_dists_lens, max_B, g_ps_dist, ps_dists_lens, max_G, ps_dist, ps_dists_lens)
 
-all_ops = mine_non_assoc(g, 100)
+# all_ops = mine_non_assoc(g, 100)
+# all_ops = mine_assoc(g, 500, z)
+all_ops = mine_assoc_fix(g, z)
 
 op_dist_plot_11(all_ops[1], "test3", "first op")
 for op in all_ops[length(all_ops)]

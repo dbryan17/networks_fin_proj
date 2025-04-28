@@ -1,4 +1,7 @@
 include("graphs.jl")
+include("models.jl")
+include("runs.jl")
+include("dist.jl")
 
 # this is a general recipe to create the runs
 
@@ -27,10 +30,102 @@ function mine_non_assoc(g, n) :: Vector{Vector{Float64}}
 
 end
 
-function mine_assoc(g, n, )
+# for everything being associative or non associativaite
+function mine_assoc(g, n, z) :: Vector{Vector{Float64}}
+  g = g 
+  n = n 
 
+  ####### ops #######
+
+  # non assoc ops
+  ops_dist, ops_dists_lens = make_dists([MyNormal(-.1, .3), MyNormal(.1, .3)], [.5, .5] , nv(g))
+  ops_0 :: Vector{Float64} = dists_to_vals(g, ops_dist, ops_dists_lens, -1., 1.)
+
+  # assoc ops
+  # ops_0 :: Vector{Float64} = make_assoc_dists([MyNormal(-.9, .3), MyNormal(.9, .3)], [.5, .5], z, -1., 1., 1.)
+  ##################
+
+  
+  max_B :: Float64 = 1.
+  # non assoc bs
+  bs_dist, bs_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
+  bs = dists_to_vals(g, bs_dist, bs_dists_lens, 0., max_B)
+
+  max_G :: Float64 = 1. 
+  # non assoc gamma, p
+  # gs_dist, gs_dists_lens = make_dists([MyNumber(0.), MyNumber(100.)], [.05, .95], nv(g))
+  # ps_dist, ps_dists_lens = make_dists([MyNumber(1.), MyNumber(1.)], [.05, .95], nv(g))
+  gs_dist, gs_dists_lens = make_dists([MyNumber(100.)], [1.], nv(g))
+  ps_dist, ps_dists_lens = make_dists([MyNumber(1.)], [1.], nv(g))
+  if ps_dists_lens != gs_dists_lens 
+    error("G and P not matching")
+  end
+  g_ps_dist = zip(gs_dist, ps_dist)
+  g_ps = tup_dists_to_vals(g, g_ps_dist, gs_dists_lens, 0., max_G, 0., 1.)
+
+  # non assoc selfs
+  ss_dist, ss_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
+  selfs = dists_to_vals(g, ss_dist, ss_dists_lens, 0., Inf)
+
+  # this is to change the model to the new version if it is set to true
+  true_backfire = false
+
+  all_ops = mine_sim(n, g, ops_0, selfs, bs, g_ps, true_backfire)
+
+  return all_ops
 end
 
+
+
+
+# for everything being associative or non associativaite.... same as above except 
+function mine_assoc_fix(g, z) :: Vector{Vector{Float64}}
+  g = g 
+  # n = n 
+  z = z
+
+  ####### ops #######
+
+  # non assoc ops
+  ops_dist, ops_dists_lens = make_dists([MyNormal(-.3, .3), MyNormal(.3, .3)], [.5, .5] , nv(g))
+  ops_0 :: Vector{Float64} = dists_to_vals(g, ops_dist, ops_dists_lens, -1., 1.)
+
+  # assoc ops
+  # ops_0 :: Vector{Float64} = make_assoc_dists([MyNormal(-.9, .3), MyNormal(.9, .3)], [.5, .5], z, -1., 1., 1.)
+  ##################
+
+  
+  max_B :: Float64 = 1.
+  # non assoc bs
+  bs_dist, bs_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
+  bs = dists_to_vals(g, bs_dist, bs_dists_lens, 0., max_B)
+
+  max_G :: Float64 = 1. 
+  # non assoc gamma, p
+  # gs_dist, gs_dists_lens = make_dists([MyNumber(0.), MyNumber(100.)], [.05, .95], nv(g))
+  # ps_dist, ps_dists_lens = make_dists([MyNumber(1.), MyNumber(1.)], [.05, .95], nv(g))
+  gs_dist, gs_dists_lens = make_dists([MyNumber(1000.)], [1.], nv(g))
+  ps_dist, ps_dists_lens = make_dists([MyNumber(1.)], [1.], nv(g))
+  if ps_dists_lens != gs_dists_lens 
+    error("G and P not matching")
+  end
+  g_ps_dist = zip(gs_dist, ps_dist)
+  g_ps = tup_dists_to_vals(g, g_ps_dist, gs_dists_lens, 0., max_G, 0., 1.)
+
+  # non assoc selfs
+  ss_dist, ss_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
+  selfs = dists_to_vals(g, ss_dist, ss_dists_lens, 0., Inf)
+
+  # this is to change the model to the new version if it is set to true
+  true_backfire = false
+
+  n, fin_ops, all_ops = mine_sim_fix(g, ops_0, selfs, bs, g_ps, true_backfire)
+
+  println(n)
+  println(fin_ops)
+
+  return all_ops
+end
 
 #= 
 The plots I will have for my presentation
@@ -104,12 +199,32 @@ aother FUTURE WORK is varying the bias per group. So like people on the negative
 
 I would agruge that the related work isn't true backfire, because it was this forgetting thing - so mine is the first for true backfire
 
+FUTURE WORK associate the biases with different opinioin groups using the same process as for the opinions
+this makes sense because it has actually been shown that certain conginative biases (especially confirmation bias and backfire)
+are more prominent in conservatives as opposed to liberals
+
+Also the future work of trying this with different ways to model opinions like linear threashold 
+also the future work of adding random external opinions like news sources that add in to the update function
+can associate certain ones with nodes (conservatives watch this new source)
+
+Research suggests that conservatives are more likely than liberals to resist changing their beliefs in the face of contradictory evidence, particularly when such evidence threatens their worldview. This is not to say that liberals are immune to bias — far from it — but that the psychological mechanisms that underlie belief formation and protection may be more pronounced in conservatives."
+it is at the very least true that on certain issues certain sides are more prone to cnfirmation bias and backfire effect 
 
 =# 
 
 # To see how long it takes to converge, get all opinions and lose some level of precesion, then get only
 # the unquie values, see how many there are, if it is 2 or 1, then boom! 
 
-# TODO make one that keeps running until some level of polarization or convergance is reached 
+# could also do plots that given a fixed parameter, see how much randomness we need to add to cause non polarization to the start
+# thats kind of the only interesting thing for randomness. otherwise fix it at like .5
+
+# can also do this for the starting values that are not assoc, how far we have to pull it apart to get stuff
+
+# also have a graph thats how many people need to stop their bias to return to normal
+
+# this is the whole power of one person
+
+# interesting.... for only gamma, the bigger the gamma the further from the middle the converange is test with bi modal
+
 
 

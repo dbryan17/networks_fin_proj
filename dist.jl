@@ -35,9 +35,15 @@ end
 
 
 
+
+
+
 function make_dists(dists :: Vector{<:MyDistTyp}, fractions :: Vector{Float64}, n :: Int)
   if reduce(+, fractions) != 1.0
     error("make dists - fractions do not add up to 1")
+  end
+  if length(dists) != length(fractions)
+    error("lenghs do not match")
   end
 
   # takes my dist type and creates the real distrubtion
@@ -57,6 +63,89 @@ function make_dists(dists :: Vector{<:MyDistTyp}, fractions :: Vector{Float64}, 
 
   return dists, sizes
   
+end
+
+# use the distributions and fractions given to give that fraction of COMMUNITIES (not nodes like the other one)
+# that disutrbution
+
+# this is make_dists and dists_to_vals
+
+# this relies on the commmunites being the same length which is true +- 1
+
+# rewrite is the percent of all ops that get rewired (added level of randomness)
+function make_assoc_dists(dists :: Vector{<:MyDistTyp}, fractions :: Vector{Float64}, z :: Vector{Int}, minVal :: Float64, maxVal :: Float64, rewire :: Float64) :: Vector{Float64}
+  if reduce(+, fractions) != 1.0
+    error("make assoc dists - fractions do not add up to 1")
+  end
+
+  if length(dists) != length(fractions)
+    error("lengths dont match")
+  end
+
+  cs :: Vector{Int} = unique(z)
+
+  num_c :: Int = length(cs)
+
+  # calculate number of communites that each dist will have 
+  nums :: Vector{Float64} = [f * num_c for f in fractions]
+
+  if !all(x -> isinteger(x), nums)
+    error("some fractions given do not work for the number of communities. Bad idxs are $(string(join(findall(x -> !isinteger(x), nums), ", ")))")
+  end
+
+  # the index can be the community that has that number
+  int_nums :: Vector{Int} = Int.(nums)
+
+  vals = Vector{Float64}()
+  offset = 1
+
+  for (i, num_coms) in enumerate(nums)
+    for com in 1:num_coms
+      com = offset + com - 1
+      num_in_com = length( filter(x -> x == com, z) )
+      
+      dist = convert_to_dist(dists[i])
+
+      if dist isa Number 
+        rands = fill(dist, num_in_com)
+      else
+        rands = rand(dist, num_in_com)
+      end
+
+      append!(vals, rands)
+    end
+    offset += num_coms
+
+  end
+
+  vals = clamp.(vals, minVal, maxVal)
+
+  if length(vals) != length(z)
+    error("lengths dont match at end of make assoc dists")
+  end
+
+
+  if rewire != 0. && rewire <= 1.
+    all_nodes :: Vector{Int} = collect(1:length(z))
+    nodes :: Vector{Int} = collect(1:length(z))
+    num_to_rewire :: Int = floor(rewire * length(z))
+
+    for _ in 1:num_to_rewire
+      node = rand(nodes)
+      node_val = vals[node]
+      filter!(n -> n != node, nodes)
+      swap_node = rand(all_nodes)
+      swap_node_val = vals[swap_node]
+
+      # do the swap 
+      vals[node] = swap_node_val
+      vals[swap_node] = node_val
+    end
+
+  end
+
+  return vals
+
 end
 
 

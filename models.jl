@@ -203,6 +203,27 @@ end
 #####################################################
 
 
+############## convergance functions #################
+
+function converged(ops :: Vector{Float64}) :: Tuple{Bool, Vector{Float64}}
+
+  epsilon = 0.005
+
+  roundeds = round.(ops ./ epsilon) .* epsilon
+
+  unqs = unique(roundeds)
+
+  if length(unqs) <= 2
+    return true, unqs
+  else 
+    return false, []
+  end
+
+end
+
+######################################################
+
+
 
 
 ############## simulate functions ###################
@@ -262,3 +283,29 @@ function mine_sim(n :: Int, g :: Graphs.SimpleGraph{Int}, ops :: Vector{Float64}
   end
   return all_ops
 end
+
+
+# now simulate until a fixpoint where we either get converange to one number or two numbers
+function mine_sim_fix(g :: Graphs.SimpleGraph{Int}, ops :: Vector{Float64}, selfs :: Vector{Float64}, bs :: Vector{Float64}, g_ps :: Vector{Tuple{Float64, Float64}}, true_backfire :: Bool) :: Tuple{Int, Vector{Float64}, Vector{Vector{Float64}}}
+  if !(nv(g) == length(ops) == length(selfs) == length(bs) == length(g_ps))
+    error("in mine sim - lengths do not match")
+  end
+  if maximum(ops) > 1. || maximum([p for (g, p) in g_ps]) > 1. || minimum(bs) < -.1 || minimum([g for (g,p) in g_ps]) < -1.
+    error("bad vals in mine sim")
+  end
+  all_ops :: Vector{Vector{Float64}} = [ops]
+  n = 0
+  while true 
+    n += 1
+    ops = mine_step(ops, selfs, bs, g_ps, g, true_backfire)
+    push!(all_ops, ops)
+    converged_v, fin_vals = converged(ops)
+    if converged_v 
+      return n, fin_vals, all_ops
+    end
+  end
+end
+
+
+
+
