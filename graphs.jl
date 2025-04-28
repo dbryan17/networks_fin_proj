@@ -73,7 +73,9 @@ e - how strong of assortive mixing. 0 is ER graph, d(1 - 1/c) is all connections
 r - scale factor. How much bigger the further out community is from the next closest to the core
 r0 - scale factor for degree. How much smaller the average degree of one out is. For ex, c1 = 5 c2 = 10. c1 avg degree is double that of c2 if r0 = 2
 =# 
-function sbm_two_scale(n :: Int, d :: Float64, c_assort :: Int, c_cp :: Int, e :: Float64, r :: Float64, r0 :: Float64) :: Graphs.SimpleGraph{Int64} 
+
+# now also returns the parition for associating with opinion
+function sbm_two_scale(n :: Int, d :: Float64, c_assort :: Int, c_cp :: Int, e :: Float64, r :: Float64, r0 :: Float64) :: Tuple{Vector{Int}, Graphs.SimpleGraph{Int64}}
 
   # I am going for inside community core perhiary, then every node inside that communitiy has same likelyhood of connecting to a node outside the community 
   # this is easier, and I think it makes the most sense
@@ -132,7 +134,7 @@ function sbm_two_scale(n :: Int, d :: Float64, c_assort :: Int, c_cp :: Int, e :
     end
   end
 
-  return g
+  return z_top, g
 
 end
 

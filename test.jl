@@ -21,11 +21,13 @@ include("make_runs.jl")
 # e : 0 -> d(1 - 1/c) 
 g = sbm_pp_asoritive(1000, 20., 10, 7.2)
 g = sbm_pp_cp(10000, 100., 2, 4.0, 2.0)
+z, g = sbm_two_scale(1000, 30., 8, 2, 15., 6., 4.)
+
 println((2 * ne(g)) / nv(g) )
 
 println((2 * ne(g)) / nv(g) )
-degree_dist_plot(g, "test3", "smb assortive dd")
-
+degree_dist_plot(g, "test3", "smb assortive two scale dd")
+error("check")
 # # all_ops = degroot_full_rand(g, 5, 0.)
 # all_ops = degroot_dist(g, 5, 0., Normal(.5, .1))
 
