@@ -87,8 +87,8 @@ function mine_assoc_fix(g, z)
   ####### ops #######
 
   # non assoc ops
-  # ops_dist, ops_dists_lens = make_dists([MyNormal(-.3, .3), MyNormal(.3, .3)], [.5, .5] , nv(g))
-  ops_dist, ops_dists_lens = make_dists([MyUniform(-1. , 1.)], [1.] , nv(g))
+  ops_dist, ops_dists_lens = make_dists([MyNormal(-.7, .2), MyNormal(.2, .2)], [.5, .5] , nv(g))
+  # ops_dist, ops_dists_lens = make_dists([MyUniform(-1. , 1.)], [1.] , nv(g))
 
   ops_0 :: Vector{Float64} = dists_to_vals(g, ops_dist, ops_dists_lens, -1., 1.)
 
@@ -99,15 +99,15 @@ function mine_assoc_fix(g, z)
   
   max_B :: Float64 = 1.
   # non assoc bs
-  bs_dist, bs_dists_lens = make_dists([MyNumber(2)], [1.], nv(g))
+  bs_dist, bs_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
   bs = dists_to_vals(g, bs_dist, bs_dists_lens, 0., max_B)
 
   max_G :: Float64 = 1. 
   # non assoc gamma, p
   # gs_dist, gs_dists_lens = make_dists([MyNumber(0.), MyNumber(100.)], [.05, .95], nv(g))
   # ps_dist, ps_dists_lens = make_dists([MyNumber(1.), MyNumber(1.)], [.05, .95], nv(g))
-  gs_dist, gs_dists_lens = make_dists([MyNumber(1.), MyNumber(0.)], [.9, .1], nv(g))
-  ps_dist, ps_dists_lens = make_dists([MyNumber(1.), MyNumber(1.)], [.9, .1], nv(g))
+  gs_dist, gs_dists_lens = make_dists([MyNumber(1.), MyNumber(0.)], [1., 0.], nv(g))
+  ps_dist, ps_dists_lens = make_dists([MyNumber(1.), MyNumber(1.)], [1., 0.], nv(g))
   if ps_dists_lens != gs_dists_lens 
     error("G and P not matching")
   end
@@ -126,11 +126,12 @@ function mine_assoc_fix(g, z)
   # b_vals = range(xmin, xmax; length=nx) |> collect
   # yvals = range(ymin, ymax; length=ny) |> collect
 
-  n, fin_val, all_ops = mine_sim_fix(g, ops_0, selfs, bs, g_ps, true_backfire)
+  # n, fin_val, all_ops = mine_sim_fix(g, ops_0, selfs, bs, g_ps, true_backfire)
+  all_ops = mine_sim(1000, g, ops_0, selfs, bs, g_ps, true_backfire)
 
-  println(n)
-  println(fin_val)
-  op_dist_plot_11(all_ops[length(all_ops)], "test2", "last op")
+  # println(n)
+  # println(fin_val)
+  op_dist_plot_11_avg(all_ops[length(all_ops)], "end", "Opinions after 5000 iterations")
   op_dist_plot_11_avg(all_ops[1], "start", "Starting Opinion Values")
 
   # op_heatmap("test")
@@ -151,9 +152,11 @@ function mine_assoc_fix_heat(g, z)
 
   # non assoc ops
   # ops_dist, ops_dists_lens = make_dists([MyNormal(-.3, .3), MyNormal(.3, .3)], [.5, .5] , nv(g))
-  ops_dist, ops_dists_lens = make_dists([MyUniform(-1. , 1.)], [1.] , nv(g))
+  ops_dist, ops_dists_lens = make_dists([MyNormal(-.7, .2), MyNormal(.3, .2)], [.5, .5] , nv(g))
 
   ops_0 :: Vector{Float64} = dists_to_vals(g, ops_dist, ops_dists_lens, -1., 1.)
+
+  print(mean(ops_0))
 
   # assoc ops
   # ops_0 :: Vector{Float64} = make_assoc_dists([MyNormal(-.9, .3), MyNormal(.9, .3)], [.5, .5], z, -1., 1., 1.)
@@ -174,6 +177,7 @@ function mine_assoc_fix_heat(g, z)
   
   res_converged_to = fill([-1.], length(b_vals), length(gamma_vals))
   res_time = fill(0, length(b_vals), length(gamma_vals))
+  res_avg = fill(-1, length(b_vals), length(gamma_vals))
 
   for (i, b_val) in enumerate(b_vals)
     for (j, g_val) in enumerate(gamma_vals)
@@ -201,10 +205,13 @@ function mine_assoc_fix_heat(g, z)
       g_ps = tup_dists_to_vals(g, g_ps_dist, gs_dists_lens, 0., max_G, 0., 1.)
 
       ###############
-      n, fin_val, all_ops = mine_sim_fix(g, ops_0, selfs, bs, g_ps, true_backfire)
+      n1, fin_val1, all_ops1 = mine_sim_fix(g, deepcopy(ops_0), selfs, bs, g_ps, true_backfire)
+      n2, fin_val2, all_ops2 = mine_sim_fix(g, deepcopy(ops_0), selfs, bs, g_ps, true_backfire)
+      n3, fin_val3, all_ops3 = mine_sim_fix(g, deepcopy(ops_0), selfs, bs, g_ps, true_backfire)
 
-      res_converged_to[i, j] = fin_val
-      res_time[i, j] = n
+      res_converged_to[i, j] = (fin_val1 .+ fin_val2 .+ fin_val3) ./ 3
+      avg = ( mean(all_ops1[length(all_ops1)]) + mean(all_ops2[length(all_ops2)]) + mean(all_ops3[length(all_ops3)]) ) / 3
+      res_time[i, j] = (n1 + n2 + n3) / 3
 
    end
   end

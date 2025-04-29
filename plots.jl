@@ -103,7 +103,7 @@ end
 function op_heatmap(x_vals :: Vector{Float64}, y_vals :: Vector{Float64}, converged_to, time_to, filename :: String)
   # z = [i * j for i in 1:10, j in 1:10]
   # p = heatmap(z)
-  rounded_converged_to = map(v -> 0.1 .* round.(v ./ 0.1), converged_to)
+  rounded_converged_to = map(v -> 0.05 .* round.(v ./ 0.05), converged_to)
   normalized_converged_to = map(v -> map(x -> x == -0.0 ? 0.0 : x, v), rounded_converged_to)
   
   poss_vals = unique(normalized_converged_to)
@@ -126,21 +126,28 @@ function op_heatmap(x_vals :: Vector{Float64}, y_vals :: Vector{Float64}, conver
           pair_val = normalized_converged_to[idx]
           time_val = scaled_time[idx]
           base_color = RGB(1,1,1)  # default white
+          if length(pair_val) == 1
+            pair_val = [pair_val[1], pair_val[1]]
+          end
           if length(pair_val) == 2
             one = maximum(pair_val)
             two = minimum(pair_val)
-            if isapprox(one, 0.0; atol=1e-3) && isapprox(two, 0.0; atol=1e-3)
-                base_color = RGB(0,1,0)  # green
-            elseif isapprox(one, .5; atol=1e-3) && isapprox(two, -0.5; atol=1e-3)
+            # 0
+            if (isapprox(one, 0.0; atol=1e-3) ||isapprox(one, 0.05; atol=1e-3) ) && (isapprox(two, 0.0; atol=1e-3) || isapprox(two, -0.05; atol=1e-3))
+                base_color = RGB(0.0, 0.0, 1.0)  # blue
+
+            # -.2
+            elseif (isapprox(one, -0.2; atol=1e-3) || isapprox(one, -0.25; atol=1e-3))  && (isapprox(two, -0.2; atol=1e-3)|| isapprox(two, -0.25; atol=1e-3))
+              base_color = RGB(0,1,0) # green
+            # .5, -.5
+            elseif (isapprox(one, .5; atol=1e-3) || isapprox(one, .55; atol=1e-3) || isapprox(one, .45; atol=1e-3)) && (isapprox(two, -0.45; atol=1e-3) || isapprox(two, -0.5; atol=1e-3) || isapprox(two, -0.55; atol=1e-3))
                 base_color = RGB(1,0,0)  # red
+
+            # .3, -.65
+            elseif (isapprox(one, .3; atol=1e-3) || isapprox(one, .35; atol=1e-3)) && (isapprox(two, -0.65; atol=1e-3) || isapprox(two, -.60; atol=1e-3))
+                base_color = RGB(1, 1, 0) # yellow
             else 
               println(pair_val)
-            end
-          elseif length(pair_val) == 1
-            if isapprox(pair_val[1], 0.0; atol=1e-3)
-              base_color = RGB(0,1,0)  # green
-            else 
-              println("non zero single value")
             end
           else 
             println("converged to 3 or more numbers") 
@@ -158,7 +165,9 @@ function op_heatmap(x_vals :: Vector{Float64}, y_vals :: Vector{Float64}, conver
 
   x_range = maximum(x_vals) - minimum(x_vals)
   y_range = maximum(y_vals) - minimum(y_vals)
-  print(minimum(y_vals))
+  println(minimum(y_vals))
+  println("max time")
+  println(max_time)
   aspect_ratio_value = x_range / y_range
   # Step 6: Plot heatmap with color scaling based on `heatmap_data`
   p = plot(     
