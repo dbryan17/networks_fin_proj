@@ -113,7 +113,7 @@ function op_heatmap(x_vals :: Vector{Float64}, y_vals :: Vector{Float64}, conver
 
   # Normalize times to [0, 1] based on global max
   max_time = maximum(time_to)
-  normalized_time = time_to ./ max_time
+  normalized_time = 1 .- (time_to ./ max_time)
 
   # scaled_time = 0.5 .+ 0.5 .* normalized_time
   scaled_time = 0.5 .+ 0.5 .* (normalized_time .- 0.5)
