@@ -99,15 +99,15 @@ function mine_assoc_fix(g, z)
   
   max_B :: Float64 = 1.
   # non assoc bs
-  bs_dist, bs_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
+  bs_dist, bs_dists_lens = make_dists([MyNumber(3.)], [1.], nv(g))
   bs = dists_to_vals(g, bs_dist, bs_dists_lens, 0., max_B)
 
   max_G :: Float64 = 1. 
   # non assoc gamma, p
   # gs_dist, gs_dists_lens = make_dists([MyNumber(0.), MyNumber(100.)], [.05, .95], nv(g))
   # ps_dist, ps_dists_lens = make_dists([MyNumber(1.), MyNumber(1.)], [.05, .95], nv(g))
-  gs_dist, gs_dists_lens = make_dists([MyNumber(1.), MyNumber(0.)], [1., 0.], nv(g))
-  ps_dist, ps_dists_lens = make_dists([MyNumber(1.), MyNumber(1.)], [1., 0.], nv(g))
+  gs_dist, gs_dists_lens = make_dists([MyNumber(1.), MyNumber(0.)], [.01, .99], nv(g))
+  ps_dist, ps_dists_lens = make_dists([MyNumber(1.), MyNumber(1.)], [.01, .99], nv(g))
   if ps_dists_lens != gs_dists_lens 
     error("G and P not matching")
   end
@@ -115,7 +115,7 @@ function mine_assoc_fix(g, z)
   g_ps = tup_dists_to_vals(g, g_ps_dist, gs_dists_lens, 0., max_G, 0., 1.)
 
   # non assoc selfs
-  ss_dist, ss_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
+  ss_dist, ss_dists_lens = make_dists([MyNumber(1.)], [1.], nv(g))
   selfs = dists_to_vals(g, ss_dist, ss_dists_lens, 0., Inf)
 
   # this is to change the model to the new version if it is set to true
@@ -126,13 +126,18 @@ function mine_assoc_fix(g, z)
   # b_vals = range(xmin, xmax; length=nx) |> collect
   # yvals = range(ymin, ymax; length=ny) |> collect
 
-  # n, fin_val, all_ops = mine_sim_fix(g, ops_0, selfs, bs, g_ps, true_backfire)
-  all_ops = mine_sim(1000, g, ops_0, selfs, bs, g_ps, true_backfire)
+  n, fin_val, all_ops = mine_sim_fix(g, ops_0, selfs, bs, g_ps, true_backfire)
+  println(n)
+  error("quite")
+  # all_ops = mine_sim(1000, g, ops_0, selfs, bs, g_ps, true_backfire)
 
   # println(n)
   # println(fin_val)
   op_dist_plot_11_avg(all_ops[length(all_ops)], "end", "Opinions after 5000 iterations")
   op_dist_plot_11_avg(all_ops[1], "start", "Starting Opinion Values")
+
+  println(mean(all_ops[length(all_ops)]))
+  println(mean(all_ops[1]))
 
   # op_heatmap("test")
 
@@ -232,7 +237,7 @@ function my_heatmap()
   z, g = sbm_two_scale(2000, 40., 20, 2, 24., 4., 2.)
   degree_dist_plot_w_avg(g, (2 * ne(g)) / nv(g), "degreedist", "Assortative, Core/Periphery SBM Degree Distribution")
 
-  mine_assoc_fix_heat(g, z)
+  mine_assoc_fix(g, z)
 
 
 end
@@ -337,5 +342,5 @@ it is at the very least true that on certain issues certain sides are more prone
 
 # interesting.... for only gamma, the bigger the gamma the further from the middle the converange is test with bi modal
 
-
+# one TODO is a plot that zooms in on the area of the plot in slides that is red and heatmpas the mean
 
