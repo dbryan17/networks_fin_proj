@@ -19,12 +19,20 @@ include("make_runs.jl")
 # TESTING
 
 # e : 0 -> d(1 - 1/c) 
-g = sbm_pp_asoritive(1000, 20., 10, 7.2)
-g = sbm_pp_cp(10000, 100., 2, 4.0, 2.0)
-z, g = sbm_two_scale(1000, 40., 8, 2, 15., 6., 4.)
+# g = sbm_pp_asoritive(1000, 20., 10, 7.2)
+# g = sbm_pp_cp(10000, 100., 2, 4.0, 2.0)
+
+my_heatmap()
+
+error("exit")
+
+# for e... 0 is ER, d(1 - 1/c) is all within com
+z, g = sbm_two_scale(2000, 40., 20, 2, 20., 4., 4.)
 
 println((2 * ne(g)) / nv(g) )
 degree_dist_plot(g, "test1", "smb assortive two scale dd")
+
+error("exit")
 # # all_ops = degroot_full_rand(g, 5, 0.)
 # all_ops = degroot_dist(g, 5, 0., Normal(.5, .1))
 

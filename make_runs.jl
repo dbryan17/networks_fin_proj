@@ -79,7 +79,7 @@ end
 
 
 # for everything being associative or non associativaite.... same as above except 
-function mine_assoc_fix(g, z) :: Vector{Vector{Float64}}
+function mine_assoc_fix(g, z)
   g = g 
   # n = n 
   z = z
@@ -87,7 +87,9 @@ function mine_assoc_fix(g, z) :: Vector{Vector{Float64}}
   ####### ops #######
 
   # non assoc ops
-  ops_dist, ops_dists_lens = make_dists([MyNormal(-.3, .3), MyNormal(.3, .3)], [.5, .5] , nv(g))
+  # ops_dist, ops_dists_lens = make_dists([MyNormal(-.3, .3), MyNormal(.3, .3)], [.5, .5] , nv(g))
+  ops_dist, ops_dists_lens = make_dists([MyUniform(-1. , 1.)], [1.] , nv(g))
+
   ops_0 :: Vector{Float64} = dists_to_vals(g, ops_dist, ops_dists_lens, -1., 1.)
 
   # assoc ops
@@ -97,15 +99,15 @@ function mine_assoc_fix(g, z) :: Vector{Vector{Float64}}
   
   max_B :: Float64 = 1.
   # non assoc bs
-  bs_dist, bs_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
+  bs_dist, bs_dists_lens = make_dists([MyNumber(2)], [1.], nv(g))
   bs = dists_to_vals(g, bs_dist, bs_dists_lens, 0., max_B)
 
   max_G :: Float64 = 1. 
   # non assoc gamma, p
   # gs_dist, gs_dists_lens = make_dists([MyNumber(0.), MyNumber(100.)], [.05, .95], nv(g))
   # ps_dist, ps_dists_lens = make_dists([MyNumber(1.), MyNumber(1.)], [.05, .95], nv(g))
-  gs_dist, gs_dists_lens = make_dists([MyNumber(1000.)], [1.], nv(g))
-  ps_dist, ps_dists_lens = make_dists([MyNumber(1.)], [1.], nv(g))
+  gs_dist, gs_dists_lens = make_dists([MyNumber(1.), MyNumber(0.)], [.9, .1], nv(g))
+  ps_dist, ps_dists_lens = make_dists([MyNumber(1.), MyNumber(1.)], [.9, .1], nv(g))
   if ps_dists_lens != gs_dists_lens 
     error("G and P not matching")
   end
@@ -119,13 +121,115 @@ function mine_assoc_fix(g, z) :: Vector{Vector{Float64}}
   # this is to change the model to the new version if it is set to true
   true_backfire = false
 
-  n, fin_ops, all_ops = mine_sim_fix(g, ops_0, selfs, bs, g_ps, true_backfire)
+  always_ops_0 = deepcopy(ops_0)
+
+  # b_vals = range(xmin, xmax; length=nx) |> collect
+  # yvals = range(ymin, ymax; length=ny) |> collect
+
+  n, fin_val, all_ops = mine_sim_fix(g, ops_0, selfs, bs, g_ps, true_backfire)
 
   println(n)
-  println(fin_ops)
+  println(fin_val)
+  op_dist_plot_11(all_ops[length(all_ops)], "test2", "last op")
+  op_dist_plot_11_avg(all_ops[1], "start", "Starting Opinion Values")
 
-  return all_ops
+  # op_heatmap("test")
+
+  return 
+
+
 end
+
+
+# for everything being associative or non associativaite.... same as above except 
+function mine_assoc_fix_heat(g, z)
+  g = g 
+  # n = n 
+  z = z
+
+  ####### ops #######
+
+  # non assoc ops
+  # ops_dist, ops_dists_lens = make_dists([MyNormal(-.3, .3), MyNormal(.3, .3)], [.5, .5] , nv(g))
+  ops_dist, ops_dists_lens = make_dists([MyUniform(-1. , 1.)], [1.] , nv(g))
+
+  ops_0 :: Vector{Float64} = dists_to_vals(g, ops_dist, ops_dists_lens, -1., 1.)
+
+  # assoc ops
+  # ops_0 :: Vector{Float64} = make_assoc_dists([MyNormal(-.9, .3), MyNormal(.9, .3)], [.5, .5], z, -1., 1., 1.)
+  ##################
+
+  # non assoc selfs
+  ss_dist, ss_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
+  selfs = dists_to_vals(g, ss_dist, ss_dists_lens, 0., Inf)
+
+  # this is to change the model to the new version if it is set to true
+  true_backfire = false
+
+  always_ops_0 = deepcopy(ops_0)
+
+  b_vals = range(0., 3.; length=50) |> collect
+  gamma_vals = range(0., 1.; length=50) |> collect
+  # gamma_vals = reverse(gamma_vals)
+  
+  res_converged_to = fill([-1.], length(b_vals), length(gamma_vals))
+  res_time = fill(0, length(b_vals), length(gamma_vals))
+
+  for (i, b_val) in enumerate(b_vals)
+    for (j, g_val) in enumerate(gamma_vals)
+
+      
+
+      ops_0 = deepcopy(always_ops_0)
+
+      ### make bs ####
+      max_B :: Float64 = 1.
+      # non assoc bs
+      bs_dist, bs_dists_lens = make_dists([MyNumber(b_val)], [1.], nv(g))
+      bs = dists_to_vals(g, bs_dist, bs_dists_lens, 0., max_B)
+      ###############
+
+      ### make gams #
+      max_G :: Float64 = 1. 
+      # non assoc gamma, p
+      gs_dist, gs_dists_lens = make_dists([MyNumber(1.), MyNumber(0.)], [g_val, 1.0-g_val], nv(g))
+      ps_dist, ps_dists_lens = make_dists([MyNumber(1.), MyNumber(1.)], [g_val, 1.0-g_val], nv(g))
+      if ps_dists_lens != gs_dists_lens 
+        error("G and P not matching")
+      end
+      g_ps_dist = zip(gs_dist, ps_dist)
+      g_ps = tup_dists_to_vals(g, g_ps_dist, gs_dists_lens, 0., max_G, 0., 1.)
+
+      ###############
+      n, fin_val, all_ops = mine_sim_fix(g, ops_0, selfs, bs, g_ps, true_backfire)
+
+      res_converged_to[i, j] = fin_val
+      res_time[i, j] = n
+
+   end
+  end
+
+  op_heatmap(b_vals, gamma_vals, res_converged_to, res_time, "testtt")
+
+  op_dist_plot_11_avg(always_ops_0, "op1", "First Opinion Distrubtion")
+
+
+  print("DONE")
+
+  return 
+
+
+end
+
+function my_heatmap() 
+  z, g = sbm_two_scale(2000, 40., 20, 2, 24., 4., 2.)
+  degree_dist_plot_w_avg(g, (2 * ne(g)) / nv(g), "degreedist", "Assortative, Core/Periphery SBM Degree Distribution")
+
+  mine_assoc_fix_heat(g, z)
+
+
+end
+
 
 #= 
 The plots I will have for my presentation
