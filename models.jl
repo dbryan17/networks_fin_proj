@@ -207,7 +207,7 @@ end
 
 function converged(ops :: Vector{Float64}) :: Tuple{Bool, Vector{Float64}}
 
-  epsilon = 0.005
+  epsilon = 0.01
 
   roundeds = round.(ops ./ epsilon) .* epsilon
 

@@ -115,7 +115,7 @@ function mine_assoc_fix(g, z)
   g_ps = tup_dists_to_vals(g, g_ps_dist, gs_dists_lens, 0., max_G, 0., 1.)
 
   # non assoc selfs
-  ss_dist, ss_dists_lens = make_dists([MyNumber(1.)], [1.], nv(g))
+  ss_dist, ss_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
   selfs = dists_to_vals(g, ss_dist, ss_dists_lens, 0., Inf)
 
   # this is to change the model to the new version if it is set to true

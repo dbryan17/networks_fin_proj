@@ -2,6 +2,7 @@ using Plots
 using Graphs
 using StatsBase
 using KernelDensity
+using LaTeXStrings
 
 
 # plot degree distrubution as a histogram
@@ -41,6 +42,16 @@ function op_dist_plot_11(ops :: Vector{Float64}, filename :: String, title :: St
   savefig(p, filename * ".png")
 end
 
+
+function line_graph_mult_y(xs, ys :: Vector{Vector{Any}}, labels :: Vector{String}, filename :: String, title)
+  p = plot(xs, ys[1], label=labels[1], lw=2, title = title, xlabel = L"y_{2,3,4}(t)", ylabel = L"y_1(t+1)")
+  for i in 2:length(ys) 
+    print(labels[i])
+    plot!(xs, ys[i], label=labels[i], lw=2)
+  end
+  savefig(p, filename * ".png")
+end
+
 function op_dist_plot_11_avg(ops :: Vector{Float64}, filename :: String, title :: String) 
   avg = mean(ops)
   p = histogram(ops, bins = 20, title = title, xlabel ="Opinion", ylabel="Frequency", legend=true, label ="")
@@ -59,6 +70,21 @@ function get_color(val)
   
   return RGB(r, g, 0.0)           # No blue component
 end
+
+
+function scatter_plot(xs, ys, filename, title, xlab, ylab)
+  p = scatter(xs, ys, title = title, xlabel = xlab, ylabel = ylab)
+  savefig(p, filename * ".png")
+end
+
+function scatter_plot_l(xss, yss, filename, title, xlab, ylab)
+  p = scatter([], [], title = title, xlabel = xlab, ylabel = ylab, legend=false)
+  for (xs, ys) in zip(xss, yss)
+    scatter!(p, xs, ys, color=:auto)
+  end
+  savefig(p, filename * ".png")
+end
+
 
 
 # function op_heatmap(x_vals :: Vector{Float64}, y_vals :: Vector{Float64}, converged_to, time_to, filename :: String)
