@@ -49,8 +49,14 @@ all we are chaning is the weight calcuation of beba
 # b is β and g is γ 
 function mine_weight_comp(b_i :: Float64, g_i_tup :: Tuple{Float64, Float64}, y_i :: Float64, y_j :: Float64) :: Float64
   # very unlikely with 64 pt prcision
-  if y_i == 0.0 || y_j == 0.0
-    error("in mine weight comp... zero op")
+  epsilon = 1e-7 
+  if y_i == 0.0
+    print("in mine weight comp... zero op")
+    y_i = rand()*2*epsilon - epsilon
+  end
+  if y_j == 0.0
+    print("in mine weight comp... zero op")
+    y_j = rand()*2*epsilon - epsilon
   end
   g_i, p_i = g_i_tup
   r = rand()
@@ -80,9 +86,14 @@ end
 # this is the new version that is true backfire. 
 # returns new weight and new y'_j(t) 
 function mine_prime_weight_j_comp(b_i :: Float64, g_i_tup :: Tuple{Float64, Float64}, y_i :: Float64, y_j :: Float64) :: Tuple{Float64, Float64}
-  if y_i == 0.0 || y_j == 0.0
-    print(y_i, y_j)
-    error("in mine weight comp... zero op")
+  epsilon = 1e-7 
+  if y_i == 0.0
+    print("in mine weight comp... zero op")
+    y_i = rand()*2*epsilon - epsilon
+  end
+  if y_j == 0.0
+    print("in mine weight comp... zero op")
+    y_j = rand()*2*epsilon - epsilon
   end
   g_i, p_i = g_i_tup
   r = rand() 

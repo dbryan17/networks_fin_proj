@@ -32,15 +32,15 @@ function mine_assoc(g, n, ops_0) :: Vector{Vector{Float64}}
   
   max_B :: Float64 = 1.
   # non assoc bs
-  bs_dist, bs_dists_lens = make_dists([MyNumber(0.)], [1.], nv(g))
+  bs_dist, bs_dists_lens = make_dists([MyNumber(.5)], [1.], nv(g))
   bs = dists_to_vals(g, bs_dist, bs_dists_lens, 0., max_B)
 
   max_G :: Float64 = 1. 
   # non assoc gamma, p
-  # gs_dist, gs_dists_lens = make_dists([MyNumber(0.), MyNumber(100.)], [.05, .95], nv(g))
-  # ps_dist, ps_dists_lens = make_dists([MyNumber(1.), MyNumber(1.)], [.05, .95], nv(g))
-  gs_dist, gs_dists_lens = make_dists([MyNumber(1.)], [1.], nv(g))
-  ps_dist, ps_dists_lens = make_dists([MyNumber(1.)], [1.], nv(g))
+  gs_dist, gs_dists_lens = make_dists([MyNumber(.5), MyNumber(1.)], [.5, .5], nv(g))
+  ps_dist, ps_dists_lens = make_dists([MyNumber(1.), MyNumber(1.)], [.5, .5], nv(g))
+  # gs_dist, gs_dists_lens = make_dists([MyNumber(1.)], [1.], nv(g))
+  # ps_dist, ps_dists_lens = make_dists([MyNumber(1.)], [1.], nv(g))
   if ps_dists_lens != gs_dists_lens 
     error("G and P not matching")
   end
@@ -152,7 +152,7 @@ function make_plot(g)
   ops_dist, ops_dists_lens = make_dists([MyNormal(0, .2)], [1.] , nv(g))
   ops_0 = dists_to_vals(g, ops_dist, ops_dists_lens, -1., 1.)
   push!(all_init_ops, ops_0)
-  ops_dist, ops_dists_lens = make_dists([MyNormal(5, .2)], [1.] , nv(g))
+  ops_dist, ops_dists_lens = make_dists([MyNormal(.5, .2)], [1.] , nv(g))
   ops_0 = dists_to_vals(g, ops_dist, ops_dists_lens, -1., 1.)
   push!(all_init_ops, ops_0)
   ops_dist, ops_dists_lens = make_dists([MyUniform(-1., 1.)], [1.] , nv(g))
@@ -198,8 +198,6 @@ function make_plot(g)
 
 
       ###### delte this 
-      # op_dist_plot_11_avg(all_ops[length(all_ops)], "end", "Opinions after 5000 iterations")
-      # op_dist_plot_11_avg(all_ops[1], "start", "Starting Opinion Values")
       epsilon = 0.01
       end_oppp = deepcopy(all_ops[length(all_ops)])
       roundeds = round.(end_oppp ./ epsilon) .* epsilon
@@ -246,7 +244,6 @@ push!(gs, g)
 
 g = er_graph(2000, .01)
 push!(gs, g)
-# make_plot(g)
 
 
 g = ws_graph(2000, 20, .001)
